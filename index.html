@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+
+    <header class="bg-white border-b border-gray-200 py-6">
+        <div class="max-w-5xl mx-auto px-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-indigo-600">ScanAI <span class="text-gray-500 text-base font-normal">| Resume Analyzer</span></h1>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
+            <h2 class="text-xl font-semibold">Upload & Analyze</h2>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Target Job Description</label>
+                <textarea id="jobDesc" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Paste the job requirements here..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Your Resume (PDF only)</label>
+                <input type="file" id="resumeFile" accept=".pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+            </div>
+
+            <button id="analyzeBtn" onclick="runAnalysis()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition">
+                Analyze Assets
+            </button>
+            <div id="loading" class="hidden text-center text-indigo-600 font-medium animate-pulse">Processing file and analyzing content...</div>
+        </section>
+
+        <section id="resultsPanel" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
+            <div class="flex items-center justify-between border-b pb-4">
+                <h2 class="text-xl font-semibold">ATS Fit Assessment</h2>
+                <div id="scoreBadge" class="text-3xl font-extrabold px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700">--%</div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Executive Overview</h3>
+                <p id="summaryText" class="text-gray-600 leading-relaxed"></p>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Missing Key Keywords</h3>
+                <div id="keywordsList" class="flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Identified Strengths</h3>
+                <ul id="strengthsList" class="list-disc list-inside text-gray-600 space-y-1"></ul>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Actionable Fixes</h3>
+                <ul id="tipsList" class="list-disc list-inside text-gray-600 space-y-1"></ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        async function runAnalysis() {
+            const jobDesc = document.getElementById('jobDesc').value;
+            const fileInput = document.getElementById('resumeFile').files[0];
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const resultsPanel = document.getElementById('resultsPanel');
+
+            if (!jobDesc || !fileInput) {
+                alert("Please paste a job description and select your PDF resume.");
+                return;
+            }
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.add('opacity-50');
+            loading.classList.remove('hidden');
+            resultsPanel.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('file', fileInput);
+            formData.append('job_description', jobDesc);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Server processing error");
+                }
+
+                const data = await response.json();
+
+                document.getElementById('scoreBadge').innerText = `${data.match_score}%`;
+                document.getElementById('summaryText').innerText = data.summary;
+
+                const badge = document.getElementById('scoreBadge');
+                if (data.match_score >= 75) {
+                    badge.className = "text-3xl font-extrabold px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700";
+                } else if (data.match_score >= 50) {
+                    badge.className = "text-3xl font-extrabold px-4 py-2 rounded-lg bg-amber-50 text-amber-700";
+                } else {
+                    badge.className = "text-3xl font-extrabold px-4 py-2 rounded-lg bg-rose-50 text-rose-700";
+                }
+
+                document.getElementById('keywordsList').innerHTML = data.missing_keywords
+                    .map(kw => `<span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-200">${kw}</span>`).join('');
+                
+                document.getElementById('strengthsList').innerHTML = data.strong_points
+                    .map(item => `<li>${item}</li>`).join('');
+
+                document.getElementById('tipsList').innerHTML = data.formatting_tips
+                    .map(item => `<li>${item}</li>`).join('');
+
+                resultsPanel.classList.remove('hidden');
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove('opacity-50');
+                loading.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
