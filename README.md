@@ -14,14 +14,14 @@ A full-stack web application that analyzes resumes against target job descriptio
 
 ## 💻 Local Setup
 
-1. Backend Setup
-bash
+### 1. Backend Setup
+```bash
 cd ai-resume-analyzer
 $env:GEMINI_API_KEY="YOUR_API_KEY"
 py -m uvicorn main:app --reload
 
-2. Frontend Setup
-bash
+### 2. Fronten Setup
+```bash
 cd ai-resume-frontend
 npm install
 npm run dev
