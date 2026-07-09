@@ -19,9 +19,10 @@ A full-stack web application that analyzes resumes against target job descriptio
 cd ai-resume-analyzer
 $env:GEMINI_API_KEY="YOUR_API_KEY"
 py -m uvicorn main:app --reload
-
-### 2. Fronten Setup
+```
+### 2. Frontend Setup
 ```bash
 cd ai-resume-frontend
 npm install
 npm run dev
+```
