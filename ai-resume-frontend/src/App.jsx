@@ -1,27 +1,23 @@
-import { useState } from 'react'
+import { useState } from 'react';
 
 function App() {
-  // --- State Management Hooks ---
   const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- Helper Layout functions ---
   const getScoreBadgeClass = (score) => {
     if (score >= 80) return "border-emerald-200 bg-emerald-50 text-emerald-700";
     if (score >= 50) return "border-amber-200 bg-amber-50 text-amber-700";
     return "border-rose-200 bg-rose-50 text-rose-700";
   };
 
-  // --- Core Async Analysis Handler ---
   const runAnalysis = async () => {
     if (!file || !jobDescription.trim()) {
       alert("Please upload a resume PDF file and provide a job description.");
       return;
     }
 
-    // 1. Instantly trigger the loading animation screen and clear old results
     setIsLoading(true);
     setResults(null); 
 
@@ -30,7 +26,6 @@ function App() {
       formData.append("file", file);
       formData.append("job_description", jobDescription);
 
-      // 2. Fire the multi-part request out to your FastAPI server backend
       const response = await fetch("http://127.0.0.1:8000/analyze", {
         method: "POST",
         body: formData,
@@ -41,19 +36,26 @@ function App() {
       }
 
       const data = await response.json();
-      setResults(data); // Feed the output directly to your layout cards
+      setResults(data); 
       
     } catch (error) {
       alert(`Error: ${error.message}`);
     } finally {
-      // 3. Cleanly turn off the loading animation window whether it succeeds or crashes
       setIsLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setFile(null);
+    setJobDescription('');
+    setResults(null);
+    
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = "";
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased">
-      {/* Navbar Banner Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-xs">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -70,17 +72,14 @@ function App() {
         </div>
       </header>
 
-      {/* Main Multi-Column Dashboard Workspace Grid */}
       <main className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         
-        {/* Left Column Input Panel Form Area */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900 mb-1">Upload Work Materials</h2>
             <p className="text-xs text-slate-400">Provide your system files to parse match alignments instantly.</p>
           </div>
 
-          {/* File Selector Block Section */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-slate-700">Your Resume (PDF Format)</label>
             <input 
@@ -91,7 +90,6 @@ function App() {
             />
           </div>
 
-          {/* Target Text Description Field Box Block */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-slate-700">Target Job Description</label>
             <textarea 
@@ -103,24 +101,31 @@ function App() {
             />
           </div>
 
-          {/* Action Trigger Button Submit Block */}
-          <button 
-            onClick={runAnalysis}
-            disabled={isLoading}
-            className={`w-full py-3 px-4 rounded-md font-semibold text-sm transition-colors text-white shadow-sm ${
-              isLoading 
-                ? 'bg-indigo-400 cursor-not-allowed' 
-                : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
-            }`}
-          >
-            {isLoading ? 'Processing Pipeline...' : 'Run Analysis Process'}
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={runAnalysis}
+              disabled={isLoading}
+              className={`flex-1 py-3 px-4 rounded-md font-semibold text-sm transition-colors text-white shadow-sm ${
+                isLoading 
+                  ? 'bg-indigo-400 cursor-not-allowed' 
+                  : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
+              }`}
+            >
+              {isLoading ? 'Processing Pipeline...' : 'Run Analysis Process'}
+            </button>
+
+            <button 
+              onClick={handleReset}
+              disabled={isLoading}
+              className="px-4 py-3 border border-gray-200 hover:bg-gray-50 text-slate-600 font-semibold text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear
+            </button>
+          </div>
         </section>
 
-        {/* Right Column Segment Area Window Space */}
         <div className="h-full flex flex-col justify-start">
           
-          {/* 1. Loading Overlay State View (Renders above line 101 dynamically while fetching) */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-sm border border-gray-100 my-4 space-y-4 animate-fade-in">
               <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -131,7 +136,6 @@ function App() {
             </div>
           )}
 
-          {/* 2. Empty Layout Default Placeholder Initial State Warning View */}
           {!results && !isLoading && (
             <div className="h-64 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-2">
               <svg className="w-8 h-8 stroke-current" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -142,7 +146,6 @@ function App() {
             </div>
           )}
 
-          {/* 3. Live Dashboard Report Data Area Card (Renders dynamically when results exist and finished loading) */}
           {results && !isLoading && (
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6 animate-fade-in">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
