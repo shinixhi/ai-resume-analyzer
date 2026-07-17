@@ -32,14 +32,15 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to process your file backend analysis request.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Server responded with status ${response.status}`);
       }
 
       const data = await response.json();
       setResults(data); 
       
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      alert(`Analysis Failed: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

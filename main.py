@@ -1,9 +1,12 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 import google.generativeai as genai
 import pypdf
 import os
 import json
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -73,7 +76,7 @@ async def analyze_resume(
         }}
         """
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
             generation_config={"response_mime_type": "application/json"}
